@@ -30,7 +30,6 @@ import com.sk89q.worldedit.FilenameException;
 import com.sk89q.worldedit.LocalConfiguration;
 import com.sk89q.worldedit.LocalPlayer;
 import com.sk89q.worldedit.LocalSession;
-import com.sk89q.worldedit.ServerInterface;
 import com.sk89q.worldedit.UnknownItemException;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.blocks.BaseBlock;
@@ -42,15 +41,40 @@ import com.sk89q.worldedit.patterns.Pattern;
  * 
  * @author sk89q
  */
-public class CraftScriptContext extends CraftScriptEnvironment {
-    private List<EditSession> editSessions = new ArrayList<EditSession>();
-    private String[] args;
+public class CraftScriptContext {
 
-    public CraftScriptContext(WorldEdit controller,
-            ServerInterface server, LocalConfiguration config,
-            LocalSession session, LocalPlayer player, String[] args) {
-        super(controller, server, config, session, player);
+    private final WorldEdit controller;
+    private final LocalConfiguration config;
+    private final LocalPlayer player;
+    private final LocalSession session;
+    private final List<EditSession> editSessions = new ArrayList<EditSession>();
+
+    private final int timeLimit;
+    private final String filename;
+    private final String[] args;
+
+    public CraftScriptContext(WorldEdit controller, LocalPlayer player, String filename,
+            String[] args) {
+        this.controller = controller;
+        this.player = player;
+        this.config = controller.getConfiguration();
+        this.session = controller.getSession(player);
+
+        this.timeLimit = config.scriptTimeout;
+        this.filename = filename;
         this.args = args;
+    }
+
+    public int getTimeLimit() {
+        return timeLimit;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public String[] getArgv() {
+        return args;
     }
 
     /**

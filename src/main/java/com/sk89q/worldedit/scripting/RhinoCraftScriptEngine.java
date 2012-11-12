@@ -19,7 +19,6 @@
 
 package com.sk89q.worldedit.scripting;
 
-import java.util.Map;
 import javax.script.ScriptException;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ImporterTopLevel;
@@ -32,36 +31,33 @@ import org.mozilla.javascript.WrappedException;
 import com.sk89q.worldedit.WorldEditException;
 
 public class RhinoCraftScriptEngine implements CraftScriptEngine {
-    private int timeLimit;
 
-    public void setTimeLimit(int milliseconds) {
-        timeLimit = milliseconds;
-    }
-
-    public int getTimeLimit() {
-        return timeLimit;
-    }
-
-    public Object evaluate(String script, String filename, Map<String, Object> args)
-            throws ScriptException, Throwable {
-        RhinoContextFactory factory = new RhinoContextFactory(timeLimit);
+    @Override
+    public Object evaluate(CraftScriptContext context, String script)
+            throws WorldEditException, ScriptException {
+        RhinoContextFactory factory =
+                new RhinoContextFactory(context.getTimeLimit());
         Context cx = factory.enterContext();
         ScriptableObject scriptable = new ImporterTopLevel(cx);
         Scriptable scope = cx.initStandardObjects(scriptable);
 
-        for (Map.Entry<String, Object> entry : args.entrySet()) {
-            ScriptableObject.putProperty(scope, entry.getKey(),
-                    Context.javaToJS(entry.getValue(), scope));
-        }
+        ScriptableObject.putProperty(scope, "context",
+                Context.javaToJS(context, scope));
+        // Shortcuts
+        ScriptableObject.putProperty(scope, "player",
+                Context.javaToJS(context.getPlayer(), scope));
+        ScriptableObject.putProperty(scope, "argv",
+                Context.javaToJS(context.getArgv(), scope));
+
         try {
-            return cx.evaluateString(scope, script, filename, 1, null);
+            return cx.evaluateString(scope, script, context.getFilename(), 1, null);
         } catch (Error e) {
             throw new ScriptException(e.getMessage());
         } catch (RhinoException e) {
             if (e instanceof WrappedException) {
                 Throwable cause = ((WrappedException) e).getCause();
                 if (cause instanceof WorldEditException) {
-                    throw cause;
+                    throw (WorldEditException) cause;
                 }
             }
 

@@ -1487,12 +1487,7 @@ public class WorldEdit {
             return;
         }
 
-        LocalSession session = getSession(player);
-        CraftScriptContext scriptContext =
-                new CraftScriptContext(this, server, config, session, player, args);
-
         CraftScriptEngine engine = null;
-
         try {
             engine = new RhinoCraftScriptEngine();
         } catch (NoClassDefFoundError e) {
@@ -1501,15 +1496,11 @@ public class WorldEdit {
             return;
         }
 
-        engine.setTimeLimit(config.scriptTimeout);
-
-        Map<String, Object> vars = new HashMap<String, Object>();
-        vars.put("argv", args);
-        vars.put("context", scriptContext);
-        vars.put("player", player);
+        CraftScriptContext context =
+                new CraftScriptContext(this, player, filename, args);
 
         try {
-            engine.evaluate(script, filename, vars);
+            engine.evaluate(context, script);
         } catch (ScriptException e) {
             player.printError("Failed to execute:");
             player.printRaw(e.getMessage());
@@ -1523,9 +1514,9 @@ public class WorldEdit {
             player.printRaw(e.getClass().getCanonicalName());
             e.printStackTrace();
         } finally {
-            for (EditSession editSession : scriptContext.getEditSessions()) {
+            for (EditSession editSession : context.getEditSessions()) {
                 editSession.flushQueue();
-                session.remember(editSession);
+                context.getSession().remember(editSession);
             }
         }
     }
