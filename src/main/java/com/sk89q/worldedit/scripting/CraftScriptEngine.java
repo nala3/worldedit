@@ -25,6 +25,8 @@ import com.sk89q.worldedit.WorldEditException;
 
 public interface CraftScriptEngine {
 
+    public boolean acceptFilename(String filename);
+
     public Object evaluate(CraftScriptContext context, String script)
             throws WorldEditException, ScriptException;
 }

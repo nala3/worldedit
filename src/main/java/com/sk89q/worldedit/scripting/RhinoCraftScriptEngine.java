@@ -33,6 +33,11 @@ import com.sk89q.worldedit.WorldEditException;
 public class RhinoCraftScriptEngine implements CraftScriptEngine {
 
     @Override
+    public boolean acceptFilename(String filename) {
+        return filename.endsWith(".js");
+    }
+
+    @Override
     public Object evaluate(CraftScriptContext context, String script)
             throws WorldEditException, ScriptException {
         RhinoContextFactory factory =
@@ -79,5 +84,4 @@ public class RhinoCraftScriptEngine implements CraftScriptEngine {
             Context.exit();
         }
     }
-
 }

@@ -90,7 +90,7 @@ import com.sk89q.worldedit.patterns.SingleBlockPattern;
 import com.sk89q.worldedit.regions.RegionSelector;
 import com.sk89q.worldedit.scripting.CraftScriptContext;
 import com.sk89q.worldedit.scripting.CraftScriptEngine;
-import com.sk89q.worldedit.scripting.RhinoCraftScriptEngine;
+import com.sk89q.worldedit.scripting.CraftScriptEngines;
 import com.sk89q.worldedit.tools.BlockTool;
 import com.sk89q.worldedit.tools.DoubleActionBlockTool;
 import com.sk89q.worldedit.tools.DoubleActionTraceTool;
@@ -149,6 +149,8 @@ public class WorldEdit {
      * not have a session object generated for them.
      */
     private final HashMap<String, LocalSession> sessions = new HashMap<String, LocalSession>();
+
+    private CraftScriptEngines craftScriptEngines = null;
 
     /**
      * Initialize statically.
@@ -1420,7 +1422,9 @@ public class WorldEdit {
         split[0] = split[0].substring(1);
 
         // Quick script shortcut
-        if (split[0].matches("^[^/].*\\.js$")) {
+        boolean craftScript = split[0].contains(".")
+                && getCraftScriptEngines().hasEngineForFilename(split[0]);
+        if (craftScript) {
             String[] newSplit = new String[split.length + 1];
             System.arraycopy(split, 0, newSplit, 1, split.length);
             newSplit[0] = "cs";
@@ -1452,16 +1456,14 @@ public class WorldEdit {
     public void runScript(LocalPlayer player, File f, String[] args)
             throws WorldEditException {
         String filename = f.getPath();
-        int index = filename.lastIndexOf(".");
-        String ext = filename.substring(index + 1, filename.length());
 
-        if (!ext.equalsIgnoreCase("js")) {
-            player.printError("Only .js scripts are currently supported");
+        CraftScriptEngine engine = getCraftScriptEngines().forFilename(filename);
+        if (engine == null) {
+            player.printError("No script engine found for file " + f.getName());
             return;
         }
 
         String script;
-
         try {
             InputStream file;
 
@@ -1487,18 +1489,8 @@ public class WorldEdit {
             return;
         }
 
-        CraftScriptEngine engine = null;
-        try {
-            engine = new RhinoCraftScriptEngine();
-        } catch (NoClassDefFoundError e) {
-            player.printError("Failed to find an installed script engine.");
-            player.printError("Please see http://wiki.sk89q.com/wiki/WorldEdit/Installation");
-            return;
-        }
-
         CraftScriptContext context =
                 new CraftScriptContext(this, player, filename, args);
-
         try {
             engine.evaluate(context, script);
         } catch (ScriptException e) {
@@ -1559,6 +1551,14 @@ public class WorldEdit {
         }
         logger.info("Accepted EditSessionFactory of type " + factory.getClass().getName() + " from " + factory.getClass().getPackage().getName());
         this.editSessionFactory = factory;
+    }
+
+    public CraftScriptEngines getCraftScriptEngines() {
+        if (craftScriptEngines == null) {
+            craftScriptEngines = new CraftScriptEngines(config.getWorkingDirectory());
+        }
+
+        return craftScriptEngines;
     }
 
     /**

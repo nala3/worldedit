@@ -135,6 +135,13 @@
           <include>config.yml</include>
         </includes>
       </resource>
+      <resource>
+        <directory>${basedir}/src/main/resources/</directory>
+        <targetPath>META-INF/services</targetPath>
+        <includes>
+          <include>com.sk89q.worldedit.scripting.CraftScriptEngine</include>
+        </includes>
+      </resource>
     </resources>
 
     <plugins>
